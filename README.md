@@ -17,8 +17,8 @@ It does not connect to a broker and cannot place real-money orders.
 - Strong-setup-only scheduled Telegram alerts
 - A simple non-lookahead educational backtest
 
-Yahoo Finance is convenient and does not require a market-data key, but its
-intraday history, freshness, rate limits and exchange coverage are not
+Yahoo Finance chart data is convenient and does not require a market-data key,
+but its intraday history, freshness, rate limits and exchange coverage are not
 guaranteed. For live execution or exchange-grade data, use an authorized
 broker/data provider later; this file intentionally does not implement order
 execution.
@@ -34,10 +34,10 @@ git clone https://github.com/Jeetrathorer/10x-think-pro.git
 cd ~/10x-think-pro
 # Termux mein NumPy/Pandas ko native packages se install karein.
 # Pip se pandas source build karna bahut slow ya fail ho sakta hai.
-pkg install clang make pkg-config python-numpy python-pandas -y
+pkg install python-numpy python-pandas -y
 python -m venv --system-site-packages .venv
 source .venv/bin/activate
-python -m pip install --no-cache-dir python-telegram-bot yfinance python-dotenv httpx
+python -m pip install --no-cache-dir python-telegram-bot python-dotenv httpx
 cp .env.example .env
 nano .env
 python 10x_think_pro.py --self-test
