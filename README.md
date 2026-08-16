@@ -32,9 +32,12 @@ cd ~
 rm -rf 10x-think-pro
 git clone https://github.com/Jeetrathorer/10x-think-pro.git
 cd ~/10x-think-pro
-python -m venv .venv
+# Termux mein NumPy/Pandas ko native packages se install karein.
+# Pip se pandas source build karna bahut slow ya fail ho sakta hai.
+pkg install clang make pkg-config python-numpy python-pandas -y
+python -m venv --system-site-packages .venv
 source .venv/bin/activate
-python -m pip install -r requirements.txt
+python -m pip install --no-cache-dir python-telegram-bot yfinance python-dotenv httpx
 cp .env.example .env
 nano .env
 python 10x_think_pro.py --self-test
