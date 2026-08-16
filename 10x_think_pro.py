@@ -33,7 +33,6 @@ from zoneinfo import ZoneInfo
 import httpx
 import numpy as np
 import pandas as pd
-import yfinance as yf
 from dotenv import load_dotenv
 from telegram import Update
 from telegram.constants import ParseMode
@@ -498,23 +497,50 @@ class Database:
 
 
 class YahooMarketData:
-    """Read-only market data adapter. No fabricated fallback values."""
+    """Read-only Yahoo chart API adapter. No fabricated fallback values."""
 
-    PERIODS = {"5m": "30d", "15m": "60d", "1h": "730d"}
+    PERIOD_SECONDS = {"5m": 30 * 86400, "15m": 60 * 86400, "1h": 730 * 86400}
+    YAHOO_INTERVALS = {"5m": "5m", "15m": "15m", "1h": "60m"}
+
+    @classmethod
+    def fetch_sync(cls, symbol: str, interval: str) -> pd.DataFrame:
+        ticker = SYMBOLS.get(symbol, symbol if "." in symbol else f"{symbol}.NS")
+        end = int(datetime.now(UTC).timestamp())
+        start = end - cls.PERIOD_SECONDS[interval]
+        url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}"
+        params = {
+            "period1": start,
+            "period2": end,
+            "interval": cls.YAHOO_INTERVALS[interval],
+            "includePrePost": "false",
+            "events": "div,splits",
+        }
+        with httpx.Client(
+            timeout=30.0,
+            headers={"User-Agent": "Mozilla/5.0 10X-THINK-PRO/1.0"},
+        ) as client:
+            response = client.get(url, params=params)
+            response.raise_for_status()
+            payload = response.json()
+        result = (payload.get("chart") or {}).get("result") or []
+        if not result or not result[0].get("timestamp"):
+            return pd.DataFrame()
+        quote = ((result[0].get("indicators") or {}).get("quote") or [{}])[0]
+        frame = pd.DataFrame(
+            {
+                "open": quote.get("open", []),
+                "high": quote.get("high", []),
+                "low": quote.get("low", []),
+                "close": quote.get("close", []),
+                "volume": quote.get("volume", []),
+            },
+            index=pd.to_datetime(result[0]["timestamp"], unit="s", utc=True),
+        )
+        return clean_yfinance_frame(frame)
 
     async def fetch(self, symbol: str, interval: str) -> pd.DataFrame:
-        ticker = SYMBOLS.get(symbol, symbol if "." in symbol else f"{symbol}.NS")
         try:
-            frame = await asyncio.to_thread(
-                lambda: yf.Ticker(ticker).history(
-                    period=self.PERIODS[interval],
-                    interval=interval,
-                    auto_adjust=False,
-                    prepost=False,
-                    actions=False,
-                )
-            )
-            return clean_yfinance_frame(frame)
+            return await asyncio.to_thread(self.fetch_sync, symbol, interval)
         except Exception:
             LOG.exception("Market-data fetch failed for %s %s", symbol, interval)
             return pd.DataFrame()
