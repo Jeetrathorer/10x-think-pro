@@ -28,17 +28,28 @@ execution.
 ```bash
 pkg update -y
 pkg install python git -y
-mkdir -p ~/10x-think-pro
+cd ~
+rm -rf 10x-think-pro
+git clone https://github.com/Jeetrathorer/10x-think-pro.git
 cd ~/10x-think-pro
-# Copy 10x_think_pro.py, requirements.txt and .env.example here
 python -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 cp .env.example .env
 nano .env
 python 10x_think_pro.py --self-test
 python 10x_think_pro.py
 ```
+
+The repository is private. When Git asks for credentials during `git clone`,
+enter your GitHub username. At the password prompt, paste your GitHub Personal
+Access Token locally in Termux; it will not be visible while typing. Never put
+the token in this README, in a shell command, or in chat.
+
+If you already created the folder using `mkdir`, remove that empty folder first
+with `rm -rf ~/10x-think-pro`, then run the clone command above. The folder must
+contain `10x_think_pro.py`, `requirements.txt`, and `.env.example` before
+running `python -m pip install -r requirements.txt`.
 
 Put the BotFather token only in `.env` as `BOT_TOKEN=...`. Do not send it in
 chat or commit `.env`. Set `ALLOWED_CHAT_IDS` to your own Telegram chat ID(s)
